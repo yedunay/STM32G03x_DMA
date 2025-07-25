@@ -6,43 +6,28 @@
  */
 
 #include "main.h"
-
+#include "stm32g0xx_hal.h"
+// Write function (asynchronous)
 bq25672_status_t write_reg(I2C_HandleTypeDef *hi2c, uint8_t reg, uint8_t val)
 {
     i2c_tx_complete = 0; // Reset completion flag
     i2c_error = 0;       // Reset error flag
+
     if (HAL_I2C_Mem_Write_DMA(hi2c, BQ25672_I2C_ADDR, reg, I2C_MEMADD_SIZE_8BIT, &val, 1) != HAL_OK) {
         return BQ25672_COMM_FAIL;
     }
 
-    // Wait for DMA transfer to complete or error to occur
-    uint32_t tickstart = HAL_GetTick();
-    while (i2c_tx_complete == 0 && i2c_error == 0) {
-        if ((HAL_GetTick() - tickstart) > HAL_MAX_DELAY) {
-            return BQ25672_COMM_FAIL; // Timeout
-        }
-    }
-    if (i2c_error)
-        return BQ25672_ERROR; // I2C error occurred
-
     return BQ25672_OK;
 }
 
+// Read function (asynchronous)
 bq25672_status_t read_reg(I2C_HandleTypeDef *hi2c, uint8_t reg, uint8_t* val)
 {
     i2c_rx_complete = 0; // Reset completion flag
     i2c_error = 0;       // Reset error flag
+
     if (HAL_I2C_Mem_Read_DMA(hi2c, BQ25672_I2C_ADDR, reg, I2C_MEMADD_SIZE_8BIT, val, 1) != HAL_OK) {
         return BQ25672_COMM_FAIL;
-    }
-
-    // Wait for DMA transfer to complete or error to occur
-    uint32_t tickstart = HAL_GetTick();
-    while (i2c_rx_complete == 0 && i2c_error == 0)
-        if ((HAL_GetTick() - tickstart) > HAL_MAX_DELAY)
-            return BQ25672_COMM_FAIL; // Timeout
-    if (i2c_error) {
-        return BQ25672_ERROR; // I2C error occurred
     }
 
     return BQ25672_OK;
